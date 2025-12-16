@@ -57,5 +57,107 @@ book_id,
 UPPER(TRIM(REGEXP_REPLACE(book_id, '[-_]', '', 'g')))
 FROM bronze.book_info;
 
+--- ========= Queries to find the published date ========= ---
 
+SELECT 
+COUNT(book_id)
+FROM bronze.book_info 
+WHERE published_date IS NULL; --- 214 
+
+SELECT 
+COUNT(book_id) 
+FROM bronze.book_info 
+WHERE LENGTH(TRIM(published_date)) = 10; --- 6054
+
+SELECT 
+COUNT(book_id)
+FROM bronze.book_info
+WHERE LENGTH(TRIM(published_date)) = 4; --- 8407
+
+SELECT 
+COUNT(book_id)
+FROM bronze.book_info
+WHERE LENGTH(TRIM(published_date)) = 7; --- 455
+
+SELECT 
+LENGTH(book_id)
+FROM bronze.book_info
+WHERE LENGTH(TRIM(published_date)) > 10; --- 14
+
+SELECT 
+COUNT(book_id)
+FROM bronze.book_info
+WHERE LENGTH(TRIM(published_date)) = 5; --- 3
+
+--- ===== AVERAGE RATING LOGIC TO CHANGE ===== ---
+
+SELECT DISTINCT average_rating FROM bronze.book_info;
+
+SELECT
+average_rating,
+CASE
+WHEN average_rating = 1 THEN 1 
+WHEN average_rating IN (1.5, 2) THEN 2
+WHEN average_rating IN (2.5, 3) THEN 3
+WHEN average_rating IN (3.5, 4) THEN 4
+WHEN average_rating IN (4.5, 5) THEN 5
+ELSE 0
+END AS new_average_rating
+FROM bronze.book_info;
+
+
+--- NOTE: WE REMOVE ALL THOSE RECORDS FOR WHICH WE FOUND THE LIST PRICE 0 OR NULL ---
+SELECT 
+COUNT(list_price) 
+FROM bronze.book_info
+WHERE list_price IS NULL OR list_price = 0; --- 58 records will be removed
+
+--- NOTE: WE WILL REMOVE THOSE RECORDS WHOSE TITLE ARE NOT PRESENT ---
+SELECT 
+COUNT(book_id)
+FROM bronze.book_info
+WHERE title IS NULL; --- 8 RECORDS WILL BE REMOVED
+
+--- NOTE: WE WILL MAKE CHANGES WITH THOSE RECORDS WHOSE TITLE CONTAINS BEST SELLER ---
+SELECT COUNT(book_id)
+FROM bronze.book_info
+WHERE title ILIKE '%BEST%SELLER%'; --- 25
+
+--- NOTE: WE FOUND ALL THOSE ISBN NUMBERS WHICH WERE NULL ---
+SELECT
+COUNT(book_id)
+FROM bronze.book_info
+WHERE isbn_13 IS NULL; --- 7764
+
+SELECT
+COUNT(book_id)
+FROM bronze.book_info
+WHERE isbn_10 IS NULL; --- 8026
+
+SELECT
+COUNT(book_id)
+FROM bronze.book_info
+WHERE isbn_13 IS NULL AND isbn_10 IS NULL; --- 7764
+
+--- ===== RATINGS COUNTS & AVERAGE COUNTS ===== ---
+SELECT *
+FROM bronze.book_info
+WHERE average_rating IS NULL AND ratings_count = 0; ---- 14290, THESE RECORDS ARE YET TO BE RATED
+
+SELECT COUNT(book_id)
+FROM bronze.book_info
+WHERE average_rating IS NOT NULL AND ratings_count IS NULL; --- 0 NO RECORDS
+
+--- ===== PAGE COUNT ===== ---
+SELECT *
+FROM bronze.book_info
+WHERE page_count <= 0; --- 858, WE WILL NOT CONSIDER THOSE RECORDS WHOSE PAGE COUNT IS 0 OR NULL
+
+SELECT COUNT(book_id)
+FROM bronze.book_info
+WHERE page_count IS NULL; --- 214
+
+--- ===== LANGUAGE ===== ---
+SELECT COUNT(DISTINCT(language))
+FROM bronze.book_info; --- 37
 
